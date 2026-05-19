@@ -1,1 +1,144 @@
-<h1>Hola.. Cap Test</h1>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrenamiento TEST CAP</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <div class="brand">
+                    <div class="brand-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                        </svg>
+                    </div>
+                    <h1>Entrenamiento <span>TEST CAP</span></h1>
+                </div>
+                <div class="header-controls">
+                    <div id="timer">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                        </svg>
+                        <span id="timer-text">120:00</span>
+                    </div>
+                    <div class="header-buttons">
+                        <button id="unanswered-btn" class="btn btn-ghost">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Sin responder
+                        </button>
+                        <button id="restart-btn" class="btn btn-ghost">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.88"/>
+                            </svg>
+                            Reiniciar
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="progress-bar-wrapper">
+                <div id="progress-bar"></div>
+                <span id="progress-label">0 / 100</span>
+            </div>
+        </header>
+
+        <main>
+            <div class="quiz-wrapper">
+                <div id="quiz">
+                    <div class="question-meta">
+                        <div id="question-number"></div>
+                        <div id="section-badge"></div>
+                    </div>
+                    <div id="question-text"></div>
+                    <div id="options"></div>
+                    <div id="feedback"></div>
+                    <div id="button-container">
+                        <button id="prev-btn" disabled class="btn btn-secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            Anterior
+                        </button>
+                        <button id="next-btn" disabled class="btn btn-primary">
+                            Siguiente
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="end-button-container">
+                        <button id="end-btn" class="btn btn-danger">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Terminar examen
+                        </button>
+                    </div>
+                </div>
+
+                <aside id="unanswered-sidebar">
+                    <div class="sidebar-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        <h3>Control de Preguntas</h3>
+                    </div>
+                    <div id="unanswered-count" class="unanswered-badge">0 Sin Responder</div>
+                    <div id="unanswered-list"></div>
+                </aside>
+            </div>
+
+            <div id="results" class="hidden">
+                <div class="results-hero">
+                    <div id="result-icon"></div>
+                    <h2>Resultado del Examen</h2>
+                    <div id="score-summary"></div>
+                </div>
+                <div class="results-grid">
+                    <div class="results-card">
+                        <h3>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+                                <line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                            Estadísticas por Sección
+                        </h3>
+                        <div id="section-stats"></div>
+                    </div>
+                    <div class="results-card">
+                        <h3>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                            Preguntas Falladas
+                        </h3>
+                        <div id="failed-list"></div>
+                    </div>
+                </div>
+                <div class="results-actions">
+                    <button id="restart-results-btn" class="btn btn-primary" onclick="restartExam()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.88"/>
+                        </svg>
+                        Nuevo examen
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="questions.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
+
