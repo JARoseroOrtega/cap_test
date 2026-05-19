@@ -268,7 +268,7 @@ function loadQuestion() {
 function handleOptionSelect(e) {
     const btn = e.target;
     // Disable all options
-    const opts = document.querySelectorAll('.option-btn');
+    const opts = cachedElements.optionsDiv.querySelectorAll('.option-btn');
     opts.forEach(o => {
         o.disabled = true;
         o.classList.add('disabled');
@@ -316,7 +316,7 @@ function prevQuestion() {
 
 function timeUp() {
     // Disable any remaining interaction
-    const opts = document.querySelectorAll('.option-btn');
+    const opts = cachedElements.optionsDiv.querySelectorAll('.option-btn');
     opts.forEach(o => o.disabled = true);
     if (cachedElements.nextBtn) {
         cachedElements.nextBtn.disabled = true;
@@ -558,29 +558,6 @@ function updateUnansweredSidebar() {
 
 // Show unanswered questions modal (kept for compatibility, but we'll use sidebar)
 
-// Button listeners
-if (cachedElements.prevBtn) {
-    cachedElements.prevBtn.addEventListener('click', prevQuestion);
-}
-if (cachedElements.nextBtn) {
-    cachedElements.nextBtn.addEventListener('click', nextQuestion);
-}
-if (cachedElements.unansweredBtn) {
-    cachedElements.unansweredBtn.addEventListener('click', () => {
-        updateUnansweredSidebar();
-        // Scroll sidebar into view if needed
-        if (cachedElements.unansweredSidebar) {
-            cachedElements.unansweredSidebar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    });
-}
-if (cachedElements.endBtn) {
-    cachedElements.endBtn.addEventListener('click', endExam);
-}
-if (cachedElements.restartBtn) {
-    cachedElements.restartBtn.addEventListener('click', restartExam);
-}
-
 // Keyboard navigation
 document.addEventListener('keydown', (e) => {
     // Prevent interference with form inputs
@@ -618,3 +595,26 @@ document.addEventListener('keydown', (e) => {
 // Start quiz
 selectProportionalQuestions(allQuestions, TOTAL_QUESTIONS);
 initQuiz();
+
+// Button listeners (must be after initQuiz so cachedElements are populated)
+if (cachedElements.prevBtn) {
+    cachedElements.prevBtn.addEventListener('click', prevQuestion);
+}
+if (cachedElements.nextBtn) {
+    cachedElements.nextBtn.addEventListener('click', nextQuestion);
+}
+if (cachedElements.unansweredBtn) {
+    cachedElements.unansweredBtn.addEventListener('click', () => {
+        updateUnansweredSidebar();
+        // Scroll sidebar into view if needed
+        if (cachedElements.unansweredSidebar) {
+            cachedElements.unansweredSidebar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    });
+}
+if (cachedElements.endBtn) {
+    cachedElements.endBtn.addEventListener('click', endExam);
+}
+if (cachedElements.restartBtn) {
+    cachedElements.restartBtn.addEventListener('click', restartExam);
+}
