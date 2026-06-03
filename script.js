@@ -406,7 +406,7 @@ function showResults() {
             }
         });
 
-        let table = `<table><thead><tr><th>Sección</th><th>Total</th><th>Correctas</th><th>Incorrectas</th><th>Sin responder</th><th>% Correctas</th></tr></thead><tbody>`;
+        let table = `<div class="table-scroll-wrapper"><table><thead><tr><th>Sección</th><th>Total</th><th>Correctas</th><th>Incorrectas</th><th>Sin responder</th><th>% Correctas</th></tr></thead><tbody>`;
         Object.entries(statsBySection).forEach(([sec, stats]) => {
             const correctPercentage = stats.total > 0 ? ((stats.correct / stats.total) * 100).toFixed(1) : '0';
             table += `<tr>
@@ -418,7 +418,7 @@ function showResults() {
                 <td><div class="section-progress-container"><div class="section-progress-bg"></div><div class="section-progress-fill" style="width: ${correctPercentage}%"></div></div> ${correctPercentage}%</td>
             </tr>`;
         });
-        table += `</tbody></table>`;
+        table += `</tbody></table></div>`;
         cachedElements.sectionStats.innerHTML = table;
     }
 

@@ -264,6 +264,8 @@ header::after {
     text-decoration: none;
     line-height: 1;
     white-space: nowrap;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .btn:disabled {
@@ -440,6 +442,15 @@ header::after {
     line-height: 1.5;
     transition: all 0.18s ease;
     position: relative;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 48px;
+}
+
+.option-btn:active:not(.disabled) {
+    background: linear-gradient(135deg, rgba(26,111,196,0.08), rgba(14,165,233,0.08));
+    border-color: var(--blue-400);
+    transform: scale(0.99);
 }
 
 .option-btn::before {
@@ -849,10 +860,17 @@ header::after {
 }
 
 /* ===== TABLE ===== */
+.table-scroll-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-sm);
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+    min-width: 420px;
 }
 
 thead th {
@@ -1021,6 +1039,17 @@ td:first-child {
     .brand h1 {
         font-size: 1.1rem;
     }
+
+    /* Results hero padding on tablet/mobile */
+    .results-hero {
+        padding: 28px 22px;
+    }
+
+    /* End exam button full width on mobile */
+    #end-button-container .btn-danger {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 @media (max-width: 480px) {
@@ -1028,6 +1057,11 @@ td:first-child {
     .btn-ghost {
         font-size: 0.78rem;
         padding: 7px 10px;
+    }
+
+    /* Hide text labels on header ghost buttons, keep icons */
+    .btn-ghost .btn-label {
+        display: none;
     }
 
     #button-container {
@@ -1043,8 +1077,8 @@ td:first-child {
 
     /* Enhance mobile touch targets */
     .option-btn {
-        min-height: 48px;
-        padding: 12px 18px;
+        min-height: 52px;
+        padding: 14px 16px;
         font-size: 0.9rem;
     }
 
@@ -1061,5 +1095,24 @@ td:first-child {
     #unanswered-list div {
         padding: 8px 12px;
         font-size: 0.85rem;
+    }
+
+    /* Results hero further reduced on small phones */
+    .results-hero {
+        padding: 22px 16px;
+    }
+
+    .results-hero h2 {
+        font-size: 1.15rem;
+    }
+
+    /* Section badge wraps gracefully */
+    .question-meta {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    #section-badge {
+        max-width: 100%;
     }
 }
