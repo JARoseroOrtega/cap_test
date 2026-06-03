@@ -58,8 +58,11 @@ function selectProportionalQuestions(questions, target) {
         }
         selectedQuestions.push(...shuffled.slice(0, intCount));
     });
-    // Shuffle final order
-    selectedQuestions.sort(() => Math.random() - 0.5);
+    // Shuffle final order using Fisher-Yates for better performance
+    for (let i = selectedQuestions.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [selectedQuestions[i], selectedQuestions[j]] = [selectedQuestions[j], selectedQuestions[i]];
+    }
 }
 
 function initQuiz() {
@@ -90,8 +93,8 @@ function startTimer() {
         }
         // Visual warnings - more subtle approach
         if (cachedElements.timerEl) {
-            // Remove previous state classes
-            cachedElements.timerEl.className = '';
+            // Remove only the state classes we're managing
+            cachedElements.timerEl.classList.remove('critical', 'warning', 'pulse-warning');
 
             if (timeLeft <= 300) { // 5 minutes
                 cachedElements.timerEl.classList.add('critical');
@@ -232,7 +235,7 @@ function loadQuestion() {
             btn.className = 'option-btn';
             // Get option text; fallback to empty string if missing
             const optionText = q.options[letter] || '';
-            btn.textContent = `${letter}) ${optionText}`;
+            btn.textContent = optionText;
             btn.dataset.letter = letter;
             btn.setAttribute('data-letter', letter);
             if (!alreadyAnswered) {
@@ -533,13 +536,18 @@ function updateUnansweredSidebar() {
                     currentIndex = idx;
                     loadQuestion();
                     updateNavButtons();
-                    updateUnansweredSidebar();
-                    // Highlight active item
+                    // Highlight active item (need to get fresh reference after sidebar was updated in loadQuestion)
                     const activeItems = cachedElements.unansweredList.querySelectorAll('div');
                     activeItems.forEach(div => {
                         div.classList.remove('active');
                     });
-                    item.classList.add('active');
+                    // Find the item corresponding to this index
+                    const items = cachedElements.unansweredList.querySelectorAll('div');
+                    items.forEach((itemEl, itemIdx) => {
+                        if (parseInt(itemEl.dataset.index) === idx) {
+                            itemEl.classList.add('active');
+                        }
+                    });
                 });
                 cachedElements.unansweredList.appendChild(item);
             }
