@@ -30,6 +30,12 @@
                         <span id="timer-text">120:00</span>
                     </div>
                     <div class="header-buttons">
+                        <button id="resume-btn" class="btn btn-primary hidden">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polygon points="5 3 19 12 5 21 5 3"/>
+                            </svg>
+                            <span class="btn-label">Continuar examen</span>
+                        </button>
                         <button id="unanswered-btn" class="btn btn-ghost">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -82,6 +88,10 @@
                             </svg>
                             Terminar examen
                         </button>
+                        <button id="back-to-results-btn" class="btn btn-secondary hidden" onclick="exitReviewMode()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                            Volver a resultados
+                        </button>
                     </div>
                 </div>
 
@@ -127,6 +137,12 @@
                     </div>
                 </div>
                 <div class="results-actions">
+                    <button id="review-btn" class="btn btn-secondary" onclick="enterReviewMode()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        Revisar preguntas
+                    </button>
                     <button id="restart-results-btn" class="btn btn-primary" onclick="restartExam()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.88"/>

@@ -4,12 +4,18 @@ let answers = []; // {selected: null, correct: boolean}
 let timerInterval = null;
 let timeLeft = 7200; // 120 minutes in seconds
 const TOTAL_QUESTIONS = 100;
+const STORAGE_KEY = 'cap_test_quiz_state';
+const EXAM_IN_PROGRESS_KEY = 'cap_test_exam_in_progress';
 
 
 // Questions are loaded via questions.js; allQuestions is defined there.
 
 // Cache for grouped questions to avoid regrouping on every restart
 let groupedQuestionsCache = null;
+
+// Exam state for persistence
+let isExamInProgress = false;
+let isReviewMode = false;
 
 function selectProportionalQuestions(questions, target) {
     // Use cached grouped questions if available
@@ -65,16 +71,27 @@ function selectProportionalQuestions(questions, target) {
     }
 }
 
-function initQuiz() {
+function initQuiz(resumeState = null) {
     // Cache DOM elements for performance
     cacheElements();
 
-    answers = new Array(selectedQuestions.length).fill().map(() => ({selected: null, correct: false}));
-    currentIndex = 0;
+    if (resumeState) {
+        selectedQuestions = resumeState.selectedQuestions;
+        currentIndex = resumeState.currentIndex;
+        answers = resumeState.answers;
+        timeLeft = resumeState.timeLeft;
+        isExamInProgress = true;
+    } else {
+        answers = new Array(selectedQuestions.length).fill().map(() => ({selected: null, correct: false}));
+        currentIndex = 0;
+        timeLeft = 7200;
+        isExamInProgress = true;
+    }
     loadQuestion();
     startTimer();
     updateNavButtons();
     updateUnansweredSidebar();
+    saveQuizState();
 }
 
 function startTimer() {
@@ -105,6 +122,10 @@ function startTimer() {
                 cachedElements.timerEl.classList.add('pulse-warning');
             }
         }
+        // Auto-save every 30 seconds
+        if (timeLeft % 30 === 0) {
+            saveQuizState();
+        }
     }, 1000);
 }
 
@@ -112,6 +133,62 @@ function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+// ===== PERSISTENCE FUNCTIONS =====
+function saveQuizState() {
+    if (!isExamInProgress) return;
+    const state = {
+        selectedQuestions: selectedQuestions.map(q => q.id),
+        currentIndex,
+        answers,
+        timeLeft,
+        timestamp: Date.now()
+    };
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(EXAM_IN_PROGRESS_KEY, 'true');
+    } catch (e) {
+        console.warn('Failed to save quiz state:', e);
+    }
+}
+
+function loadQuizState() {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        const inProgress = localStorage.getItem(EXAM_IN_PROGRESS_KEY);
+        if (!saved || !inProgress) return null;
+        const state = JSON.parse(saved);
+        // Validate state structure
+        if (!state.selectedQuestions || !state.answers || typeof state.currentIndex !== 'number' || typeof state.timeLeft !== 'number') {
+            return null;
+        }
+        // Restore selectedQuestions from IDs
+        const idToQuestion = new Map(allQuestions.map(q => [q.id, q]));
+        const restoredQuestions = state.selectedQuestions.map(id => idToQuestion.get(id)).filter(Boolean);
+        if (restoredQuestions.length !== state.selectedQuestions.length) {
+            return null; // Some questions not found, invalid state
+        }
+        return {
+            selectedQuestions: restoredQuestions,
+            currentIndex: state.currentIndex,
+            answers: state.answers,
+            timeLeft: state.timeLeft
+        };
+    } catch (e) {
+        console.warn('Failed to load quiz state:', e);
+        return null;
+    }
+}
+
+function clearQuizState() {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(EXAM_IN_PROGRESS_KEY);
+    isExamInProgress = false;
+}
+
+function hasSavedProgress() {
+    return localStorage.getItem(EXAM_IN_PROGRESS_KEY) === 'true' && localStorage.getItem(STORAGE_KEY) !== null;
 }
 
 // Cache DOM elements for performance
@@ -139,7 +216,10 @@ const cachedElements = {
     sectionStats: null,
     failedList: null,
     endBtn: null,
-    restartBtn: null
+    restartBtn: null,
+    resumeBtn: null,
+    reviewBtn: null,
+    backToResultsBtn: null
 };
 
 function cacheElements() {
@@ -167,6 +247,9 @@ function cacheElements() {
     cachedElements.failedList = document.getElementById('failed-list');
     cachedElements.endBtn = document.getElementById('end-btn');
     cachedElements.restartBtn = document.getElementById('restart-btn');
+    cachedElements.resumeBtn = document.getElementById('resume-btn');
+    cachedElements.reviewBtn = document.getElementById('review-btn');
+    cachedElements.backToResultsBtn = document.getElementById('back-to-results-btn');
 }
 
 function loadQuestion() {
@@ -187,15 +270,28 @@ function loadQuestion() {
     }
 
     // Update progress bar
-    const answered = answers.filter(a => a.selected !== null).length;
-    const pct = Math.round((answered / selectedQuestions.length) * 100);
-    if (cachedElements.progressBar && cachedElements.progressBarWrapper) {
-        cachedElements.progressBarWrapper.style.display = '';
-        cachedElements.progressBar.parentElement.style.flex = '1';
-        cachedElements.progressBar.style.width = pct + '%';
-    }
-    if (cachedElements.progressLabel) {
-        cachedElements.progressLabel.textContent = `${answered} / ${selectedQuestions.length}`;
+    if (isReviewMode) {
+        // In review mode, show current position as progress
+        const pct = Math.round(((currentIndex + 1) / selectedQuestions.length) * 100);
+        if (cachedElements.progressBar && cachedElements.progressBarWrapper) {
+            cachedElements.progressBarWrapper.style.display = '';
+            cachedElements.progressBar.parentElement.style.flex = '1';
+            cachedElements.progressBar.style.width = pct + '%';
+        }
+        if (cachedElements.progressLabel) {
+            cachedElements.progressLabel.textContent = `${currentIndex + 1} / ${selectedQuestions.length}`;
+        }
+    } else {
+        const answered = answers.filter(a => a.selected !== null).length;
+        const pct = Math.round((answered / selectedQuestions.length) * 100);
+        if (cachedElements.progressBar && cachedElements.progressBarWrapper) {
+            cachedElements.progressBarWrapper.style.display = '';
+            cachedElements.progressBar.parentElement.style.flex = '1';
+            cachedElements.progressBar.style.width = pct + '%';
+        }
+        if (cachedElements.progressLabel) {
+            cachedElements.progressLabel.textContent = `${answered} / ${selectedQuestions.length}`;
+        }
     }
 
     // Update question text
@@ -223,36 +319,35 @@ function loadQuestion() {
             }
         }
 
-        // Always enable next button (allow skipping questions)
-        if (cachedElements.nextBtn) {
-            cachedElements.nextBtn.disabled = false;
-        }
-
-        const letters = ['A', 'B', 'C', 'D'];
-        const fragment = document.createDocumentFragment();
-        letters.forEach(letter => {
-            const btn = document.createElement('button');
-            btn.className = 'option-btn';
-            // Get option text; fallback to empty string if missing
-            const optionText = q.options[letter] || '';
-            btn.textContent = optionText;
-            btn.dataset.letter = letter;
-            btn.setAttribute('data-letter', letter);
-            if (!alreadyAnswered) {
-                btn.addEventListener('click', handleOptionSelect);
+        // In review mode, always show answers as disabled feedback
+        if (isReviewMode) {
+            // Disable next/prev buttons during review (navigation via clicks on sidebar or keyboard)
+            if (cachedElements.nextBtn) {
+                cachedElements.nextBtn.disabled = true;
+                cachedElements.nextBtn.classList.add('disabled');
             }
-            fragment.appendChild(btn);
-        });
-        cachedElements.optionsDiv.appendChild(fragment);
+            if (cachedElements.prevBtn) {
+                cachedElements.prevBtn.disabled = true;
+                cachedElements.prevBtn.classList.add('disabled');
+            }
 
-        // Disable all option buttons if already answered
-        if (alreadyAnswered) {
-            const opts = cachedElements.optionsDiv.querySelectorAll('.option-btn');
-            opts.forEach(o => {
-                o.disabled = true;
-                o.classList.add('disabled');
+            const letters = ['A', 'B', 'C', 'D'];
+            const fragment = document.createDocumentFragment();
+            letters.forEach(letter => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                // Get option text; fallback to empty string if missing
+                const optionText = q.options[letter] || '';
+                btn.textContent = optionText;
+                btn.dataset.letter = letter;
+                btn.setAttribute('data-letter', letter);
+                btn.disabled = true; // Always disabled in review mode
+                fragment.appendChild(btn);
             });
-            // Optionally add visual indication of correctness
+            cachedElements.optionsDiv.appendChild(fragment);
+
+            // Add visual indication of selected vs correct answer
+            const opts = cachedElements.optionsDiv.querySelectorAll('.option-btn');
             opts.forEach(o => {
                 const letter = o.dataset.letter;
                 if (letter === q.answer) {
@@ -261,6 +356,47 @@ function loadQuestion() {
                     o.classList.add('incorrect');
                 }
             });
+        } else {
+            // Normal quiz/exam mode
+            // Always enable next button (allow skipping questions)
+            if (cachedElements.nextBtn) {
+                cachedElements.nextBtn.disabled = false;
+            }
+
+            const letters = ['A', 'B', 'C', 'D'];
+            const fragment = document.createDocumentFragment();
+            letters.forEach(letter => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                // Get option text; fallback to empty string if missing
+                const optionText = q.options[letter] || '';
+                btn.textContent = optionText;
+                btn.dataset.letter = letter;
+                btn.setAttribute('data-letter', letter);
+                if (!alreadyAnswered) {
+                    btn.addEventListener('click', handleOptionSelect);
+                }
+                fragment.appendChild(btn);
+            });
+            cachedElements.optionsDiv.appendChild(fragment);
+
+            // Disable all option buttons if already answered
+            if (alreadyAnswered) {
+                const opts = cachedElements.optionsDiv.querySelectorAll('.option-btn');
+                opts.forEach(o => {
+                    o.disabled = true;
+                    o.classList.add('disabled');
+                });
+                // Optionally add visual indication of correctness
+                opts.forEach(o => {
+                    const letter = o.dataset.letter;
+                    if (letter === q.answer) {
+                        o.classList.add('correct');
+                    } else if (letter === answers[currentIndex].selected) {
+                        o.classList.add('incorrect');
+                    }
+                });
+            }
         }
     }
 
@@ -302,11 +438,13 @@ function handleOptionSelect(e) {
     if (cachedElements.nextBtn) {
         cachedElements.nextBtn.disabled = false;
     }
+    saveQuizState();
 }
 
 function nextQuestion() {
     currentIndex++;
     loadQuestion();
+    saveQuizState();
 }
 
 // Previous question
@@ -314,6 +452,7 @@ function prevQuestion() {
     if (currentIndex > 0) {
         currentIndex--;
         loadQuestion();
+        saveQuizState();
     }
 }
 
@@ -462,6 +601,7 @@ function endExam() {
         if (cachedElements.nextBtn) {
             cachedElements.nextBtn.disabled = true;
         }
+        clearQuizState();
         showResults();
     }
 }
@@ -483,8 +623,78 @@ function restartExam() {
         if (cachedElements.timerEl) {
             cachedElements.timerEl.className = '';
         }
+        clearQuizState();
         selectProportionalQuestions(allQuestions, TOTAL_QUESTIONS);
         initQuiz();
+    }
+}
+
+// Enter review mode - browse all questions with answers shown
+function enterReviewMode() {
+    isReviewMode = true;
+    currentIndex = 0;
+
+    // Show quiz, hide results
+    if (cachedElements.quizDiv) {
+        cachedElements.quizDiv.classList.remove('hidden');
+    }
+    if (cachedElements.resultsDiv) {
+        cachedElements.resultsDiv.classList.add('hidden');
+    }
+
+    // Hide timer and exam-specific buttons during review
+    if (cachedElements.timerEl) {
+        cachedElements.timerEl.style.display = 'none';
+    }
+    if (cachedElements.endBtn) {
+        cachedElements.endBtn.parentElement.style.display = 'none';
+    }
+    if (cachedElements.unansweredBtn) {
+        cachedElements.unansweredBtn.style.display = 'none';
+    }
+    if (cachedElements.unansweredSidebar) {
+        cachedElements.unansweredSidebar.style.display = 'none';
+    }
+
+    // Update progress bar label for review context
+    if (cachedElements.progressLabel) {
+        cachedElements.progressLabel.textContent = `1 / ${selectedQuestions.length}`;
+    }
+
+    loadQuestion();
+    updateNavButtons();
+
+    // Show back-to-results button
+    if (cachedElements.backToResultsBtn) {
+        cachedElements.backToResultsBtn.classList.remove('hidden');
+    }
+}
+
+// Exit review mode - go back to results
+function exitReviewMode() {
+    isReviewMode = false;
+
+    // Restore timer and buttons visibility
+    if (cachedElements.timerEl) {
+        cachedElements.timerEl.style.display = '';
+    }
+    if (cachedElements.endBtn) {
+        cachedElements.endBtn.parentElement.style.display = '';
+    }
+    if (cachedElements.unansweredBtn) {
+        cachedElements.unansweredBtn.style.display = '';
+    }
+    // Hide back-to-results button
+    if (cachedElements.backToResultsBtn) {
+        cachedElements.backToResultsBtn.classList.add('hidden');
+    }
+
+    // Show results, hide quiz
+    if (cachedElements.quizDiv) {
+        cachedElements.quizDiv.classList.add('hidden');
+    }
+    if (cachedElements.resultsDiv) {
+        cachedElements.resultsDiv.classList.remove('hidden');
     }
 }
 
@@ -600,9 +810,45 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Start quiz
-selectProportionalQuestions(allQuestions, TOTAL_QUESTIONS);
-initQuiz();
+// Resume exam handler
+function resumeExam() {
+    const savedState = loadQuizState();
+    if (savedState) {
+        if (cachedElements.resumeBtn) {
+            cachedElements.resumeBtn.classList.add('hidden');
+        }
+        initQuiz(savedState);
+    }
+}
+
+// Start quiz - check for saved progress
+const savedState = loadQuizState();
+if (savedState) {
+    // Show resume button
+    if (cachedElements.resumeBtn) {
+        cachedElements.resumeBtn.classList.remove('hidden');
+        cachedElements.resumeBtn.addEventListener('click', resumeExam);
+    }
+    // Don't auto-start, wait for user to click resume or restart
+    selectProportionalQuestions(allQuestions, TOTAL_QUESTIONS);
+    // Initialize with first question but don't start timer yet
+    cacheElements();
+    answers = new Array(TOTAL_QUESTIONS).fill().map(() => ({selected: null, correct: false}));
+    currentIndex = 0;
+    loadQuestion();
+    updateNavButtons();
+    updateUnansweredSidebar();
+    // Hide quiz until user resumes or restarts
+    if (cachedElements.quizDiv) {
+        cachedElements.quizDiv.classList.add('hidden');
+    }
+    if (cachedElements.resultsDiv) {
+        cachedElements.resultsDiv.classList.add('hidden');
+    }
+} else {
+    selectProportionalQuestions(allQuestions, TOTAL_QUESTIONS);
+    initQuiz();
+}
 
 // Button listeners (must be after initQuiz so cachedElements are populated)
 if (cachedElements.prevBtn) {
@@ -626,3 +872,15 @@ if (cachedElements.endBtn) {
 if (cachedElements.restartBtn) {
     cachedElements.restartBtn.addEventListener('click', restartExam);
 }
+
+// Beforeunload warning when exam in progress
+window.addEventListener('beforeunload', (e) => {
+    if (isExamInProgress && !cachedElements.resultsDiv.classList.contains('hidden')) {
+        return;
+    }
+    if (isExamInProgress) {
+        e.preventDefault();
+        e.returnValue = 'Tiene un examen en progreso. ¿Está seguro de que quiere salir?';
+        return e.returnValue;
+    }
+});
